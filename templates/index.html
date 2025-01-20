@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block title %}Pomodoro Timer{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>Welcome, {{ username }}!</h1>
+            <p>Gérez vos tâches, suivez vos activités et améliorez votre productivité.</p>
+            <a href="/tasks" class="btn-custom">Commencez maintenant</a>
+        </div>
+        {% endblock %}

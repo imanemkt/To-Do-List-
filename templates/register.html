@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <div class="container my-5">
+        <h1 class="text-center mb-4">S'inscrire</h1>
+
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.username.label }}<br>
+                {{ form.username(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.password.label }}<br>
+                {{ form.password(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary w-100">S'inscrire</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

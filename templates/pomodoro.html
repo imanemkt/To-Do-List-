@@ -1,0 +1,220 @@
+
+{% extends "layout.html" %}
+
+{% block title %}Pomodoro Timer{% endblock %}
+
+{% block content %}
+        <div class="container text-center mt-5">
+            <h1 class="mb-4">Pomodoro Timer</h1>
+
+            <!-- Form for Customizing Options -->
+            <form id="options-form" class="mb-4">
+                <div class="row justify-content-center">
+                    <div class="col-md-3">
+                        <label for="work-duration" class="form-label">Work Duration (minutes)</label>
+                        <input type="number" id="work-duration" class="form-control" value="25" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="break-duration" class="form-label">Break Duration (minutes)</label>
+                        <input type="number" id="break-duration" class="form-control" value="5" min="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="theme-selector" class="form-label">Theme</label>
+                        <select id="theme-selector" class="form-select">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="session-sound" class="form-label">Session Sound</label>
+                        <select id="session-sound" class="form-select">
+                            <option value="none">None</option>
+                            <option value="quran">Quran</option>
+                            <option value="ticking">Ticking</option>
+                            <option value="ambient">Ambient Noise</option>
+                            <option value="alarm">Alarm</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="quran-options" class="row justify-content-center mt-3" style="display: none;">
+                    <div class="col-md-4">
+                        <label for="quran-surah" class="form-label">Choose Surah</label>
+                        <select id="quran-surah" class="form-select">
+                            <option value="{{ url_for('static', filename='audio/fatiha.mp3') }}">Al-Fatiha</option>
+                            <option value="{{ url_for('static', filename='audio/al-ghashiya.mp3') }}">Al-Ghashiya</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="ticking-options" class="row justify-content-center mt-3" style="display: none;">
+                    <div class="col-md-4">
+                        <label for="ticking-sound-select" class="form-label">Choose Ticking Sound</label>
+                        <select id="ticking-sound-select" class="form-select">
+                            <option value="{{ url_for('static', filename='audio/ticking-clock-sound.mp3') }}">Ticking 1</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Timer Display -->
+            <div class="timer" id="timer">25:00</div>
+
+            <!-- Timer Controls -->
+            <div class="mt-4">
+                <button class="btn btn-primary btn-custom" id="start-btn">Start</button>
+                <button class="btn btn-secondary btn-custom" id="pause-btn" disabled>Pause</button>
+                <button class="btn btn-danger btn-custom" id="reset-btn" disabled>Reset</button>
+            </div>
+
+            <div class="mt-5">
+                <p class="text-muted">Work for the set time, then take a short break!</p>
+            </div>
+        </div>
+
+        <!-- Audio Elements -->
+        <audio id="start-sound">
+            <source src="https://www.soundjay.com/button/beep-08b.wav" type="audio/wav">
+        </audio>
+        <audio id="end-sound">
+            <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
+        </audio>
+        <audio id="quran-sound" loop></audio>
+        <audio id="ticking-sound" loop></audio>
+        <audio id="ambient-sound" loop></audio>
+        <audio id="alarm-sound" loop></audio>
+    </main>
+
+    <script>
+        // Same JavaScript logic as before
+        let timer;
+        let timeRemaining;
+        let isRunning = false;
+        let isWorkSession = true;
+
+        const timerDisplay = document.getElementById('timer');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const workDurationInput = document.getElementById('work-duration');
+        const breakDurationInput = document.getElementById('break-duration');
+        const themeSelector = document.getElementById('theme-selector');
+        const sessionSoundSelector = document.getElementById('session-sound');
+        const quranSurahSelect = document.getElementById('quran-surah');
+        const tickingSoundSelect = document.getElementById('ticking-sound-select');
+        const ambientSound = document.getElementById('ambient-sound');
+        const alarmSound = document.getElementById('alarm-sound');
+        const quranSound = document.getElementById('quran-sound');
+        const tickingSound = document.getElementById('ticking-sound');
+        const startSound = document.getElementById('start-sound');
+        const endSound = document.getElementById('end-sound');
+        const quranOptions = document.getElementById('quran-options');
+        const tickingOptions = document.getElementById('ticking-options');
+
+        // Function to format time
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Function to update the timer display
+        function updateTimerDisplay() {
+            timerDisplay.textContent = formatTime(timeRemaining);
+        }
+
+        // Theme Change
+        themeSelector.addEventListener('change', function() {
+            if (themeSelector.value === 'dark') {
+                document.body.classList.add('dark');
+                document.querySelector('.sidebar').classList.add('dark');
+            } else {
+                document.body.classList.remove('dark');
+                document.querySelector('.sidebar').classList.remove('dark');
+            }
+        });
+
+        // Start Timer
+        startBtn.addEventListener('click', () => {
+            if (!isRunning) {
+                startSound.play();
+                playSessionSound();
+
+                isRunning = true;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                resetBtn.disabled = false;
+
+                timer = setInterval(() => {
+                    if (timeRemaining > 0) {
+                        timeRemaining--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timer);
+                        endSound.play();
+                        isRunning = false;
+                        startBtn.disabled = false;
+                        pauseBtn.disabled = true;
+                        resetBtn.disabled = false;
+                        switchSession();
+                    }
+                }, 1000);
+            }
+        });
+
+        // Pause Timer
+        pauseBtn.addEventListener('click', () => {
+            clearInterval(timer);
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        });
+
+        // Reset Timer
+        resetBtn.addEventListener('click', () => {
+            clearInterval(timer);
+            isRunning = false;
+            timeRemaining = isWorkSession ? parseInt(workDurationInput.value) * 60 : parseInt(breakDurationInput.value) * 60;
+            updateTimerDisplay();
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resetBtn.disabled = true;
+        });
+
+        // Handle Session Switch
+        function switchSession() {
+            isWorkSession = !isWorkSession;
+            timeRemaining = isWorkSession ? parseInt(workDurationInput.value) * 60 : parseInt(breakDurationInput.value) * 60;
+            updateTimerDisplay();
+        }
+
+        // Play selected session sound
+        function playSessionSound() {
+            const selectedSound = sessionSoundSelector.value;
+
+            quranOptions.style.display = 'none';
+            tickingOptions.style.display = 'none';
+
+            if (selectedSound === 'quran') {
+                quranOptions.style.display = 'block';
+                quranSound.src = quranSurahSelect.value;
+                quranSound.play();
+            } else if (selectedSound === 'ticking') {
+                tickingOptions.style.display = 'block';
+                tickingSound.src = tickingSoundSelect.value;
+                tickingSound.play();
+            } else if (selectedSound === 'ambient') {
+                ambientSound.src = "https://www.soundjay.com/button/beep-07.wav";
+                ambientSound.play();
+            } else if (selectedSound === 'alarm') {
+                alarmSound.src = "https://www.soundjay.com/button/beep-08b.wav";
+                alarmSound.play();
+            } else {
+                // Stop all sounds
+                quranSound.pause();
+                tickingSound.pause();
+                ambientSound.pause();
+                alarmSound.pause();
+            }
+        }
+    </script>
+
+{% endblock %}
