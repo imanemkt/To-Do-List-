@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style id="theme-style">
+        /* Default Light Theme */
+        body {
+            background-color: #f0f8f0;
+            color: #2f4f4f;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #A8D5BA;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #8FC0A9;
+            text-align: center;
+        }
+        .sidebar a:hover {
+            background-color: #78A78A;
+        }
+        main {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .timer {
+            font-size: 5rem;
+            font-weight: bold;
+        }
+        .btn-custom {
+            width: 120px;
+            font-size: 1.2rem;
+        }
+
+        /* Dark Theme */
+        body.dark {
+            background-color: #2E3B2E;
+            color: #F0F0F0;
+        }
+        .sidebar.dark {
+            background-color: #3E5B3E;
+        }
+        .sidebar.dark a {
+            background-color: #5A7F5A;
+        }
+        .sidebar.dark a:hover {
+            background-color: #4E6F4E;
+        }
+
+        /* Icon styling */
+        .fas {
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h6>{{ username }} 
+            <i class="fas fa-moon" id="theme-toggle"></i>
+        </h6>
+        <a href="/">Accueil</a>
+        <a href="/tasks">Tâches</a>
+        <a href="/pomodoro">Pomodoro Timer</a>
+        <a href="/activity">Activité</a>
+
+        <!-- Logout Link -->
+        <a href="/logout" class="btn btn-danger">Déconnexion</a>
+    </div>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- JavaScript pour gérer le changement de thème -->
+    <script>
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // Vérifier le thème au chargement
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark');
+            themeToggle.classList.remove('fa-moon');
+            themeToggle.classList.add('fa-sun');
+        }
+
+        themeToggle.addEventListener('click', function() {
+            body.classList.toggle('dark');
+
+            // Sauvegarder la préférence de thème dans localStorage
+            if (body.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+                themeToggle.classList.remove('fa-moon');
+                themeToggle.classList.add('fa-sun');
+            } else {
+                localStorage.removeItem('theme');
+                themeToggle.classList.remove('fa-sun');
+                themeToggle.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>
