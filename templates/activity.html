@@ -58,9 +58,18 @@
                     <div class="card p-3">
                         <h5 class="card-title">Activité Aujourd'hui</h5>
                         <div class="progress">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ (completed_tasks / total_tasks) * 100 }}%;" aria-valuenow="{{ (completed_tasks / total_tasks) * 100 }}" aria-valuemin="0" aria-valuemax="100">{{ (completed_tasks / total_tasks) * 100 }}%</div>
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks) * 100 }}{% else %}0{% endif %}%;"
+                                 aria-valuenow="{{ (completed_tasks / total_tasks) * 100 if total_tasks > 0 else 0 }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                {% if total_tasks > 0 %}
+                                    {{ (completed_tasks / total_tasks) * 100 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
                         </div>
-                        <p class="mt-3">Vous avez été actif à {{ (completed_tasks / total_tasks) * 100 }}% aujourd'hui.</p>
+                        <p class="mt-3">Vous avez été actif à {% if total_tasks > 0 %}{{ (completed_tasks / total_tasks) * 100 }}{% else %}0{% endif %}% aujourd'hui.</p>
                     </div>
                 </div>
 
