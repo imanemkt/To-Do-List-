@@ -1,19 +1,147 @@
-{% extends "layout.html" %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion</title>
+    <!-- Bootstrap CSS (optional, if you want to use Bootstrap classes) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="calendar (1).png" type="image/png">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa; /* Light background for the page */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Full viewport height */
+            margin: 0;
+            background: linear-gradient(-45deg, #78A78A, #d0dfd4, #8FC0A9, #4a7a5d); /* Gradient colors */
+            background-size: 400% 400%; /* Larger background size for animation */
+            animation: gradientBG 10s ease infinite; /* Background animation */
+        }
 
-{% block content %}
-    <div class="container my-5">
-        <h1 class="text-center mb-4">Connexion</h1>
+                @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
 
-        <form action="/login" method="post">
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" name="email" id="email" class="form-control" required>
+        .card {
+            border: none;
+            border-radius: 15px;
+            width: 600px;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+        }
+
+        .card {
+            opacity: 0; /* Start invisible */
+            animation: fadeIn 1.5s ease-in-out forwards; /* Fade-in animation */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px); /* Starts slightly below */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); /* Moves to its original position */
+            }
+        }
+
+        .btn-primary {
+            background-color: #8FC0A9;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%; /* Full width button */
+        }
+
+        .btn-primary:hover {
+            background-color: #78A78A;
+        }
+
+        .btn-outline-primary {
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            width: 100%; /* Full width button */
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #78A78A;
+            color: white; /* Change text color on hover */
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .form-control:focus {
+            border-color: #8FC0A9;
+            box-shadow: 0 0 0 0.2rem rgba(143, 192, 169, 0.25); /* Focus effect */
+        }
+
+        .here {
+            width: 100%;
+            display: flex;
+            padding-left: 250px;
+        }
+
+        .btn-primary, .btn-outline-primary {
+            transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth transition */
+        }
+
+        .btn-primary:hover, .btn-outline-primary:hover {
+            transform: scale(1.05); /* Slightly enlarges the button */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="here">
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-lg">
+                    <div class="card-body p-4">
+                        <h1 class="text-center mb-4">Connexion</h1>
+
+                        <!-- Login Form -->
+                        <form action="/login" method="post">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" name="email" id="email" class="form-control" placeholder="Entrez votre email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <input type="password" name="password" id="password" class="form-control" placeholder="Entrez votre mot de passe" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mb-3">Se connecter</button>
+                        </form>
+
+                        <!-- Sign Up Link -->
+                        <div class="text-center mt-3">
+                            <p class="mb-0" style="padding-bottom: 10px; margin-top: -15px;">Vous n'avez pas de compte ?</p>
+                            <a href="/signup" class="btn btn-outline-primary w-100">S'inscrire</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Mot de passe</label>
-                <input type="password" name="password" id="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Se connecter</button>
-        </form>
+        </div>
     </div>
-{% endblock %}
+
+    <!-- Optional: Bootstrap JS (if you need Bootstrap functionality) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
