@@ -64,7 +64,29 @@
             <audio id="ambient-sound" loop></audio>
             <audio id="alarm-sound" loop></audio>
         </div>
-
+        <style>
+            .container {
+                padding: 15px;
+                border: none;
+                border-radius: 15px;
+                height: auto;
+                width: auto;
+                background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+                opacity: 0; /* Start invisible */
+                animation: fadeIn 1.5s ease-in-out forwards; /* Fade-in animation */
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px); /* Starts slightly below */
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0); /* Moves to its original position */
+                }
+            }
+        </style>
     <script>
         let timer;
         let timeRemaining;
