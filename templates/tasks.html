@@ -2,11 +2,10 @@
 
 {% block content %}
     <div class="container my-5">
-        <h1 class="text-center mb-4">Planification des Tâches</h1>
-
+        <h1 class="text-center mb-4" style="margin-top: 15px; padding-top: 10px;">Planification des Tâches</h1>
 
         <!-- Formulaire pour ajouter une tâche -->
-        <form action="/add" method="post" class="row g-3 mb-4">
+        <form id="addTaskForm" class="row g-3 mb-4">
             <div class="col-md-3">
                 <input type="text" name="title" placeholder="Titre" class="form-control" required>
             </div>
@@ -45,9 +44,9 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="activeTasks">
                 {% for task in tasks %}
-                <tr>
+                <tr id="task-{{ task.id }}">
                     <td>{{ task.title }}</td>
                     <td>{{ task.due_date }}</td>
                     <td>
@@ -58,12 +57,12 @@
                     <td>{{ task.category }}</td>
                     <td>{{ 'Oui' if task.completed else 'Non' }}</td>
                     <td class="d-flex gap-2">
-                        <form action="/complete/{{ task.id }}" method="POST">
+                        <form class="completeTaskForm" data-task-id="{{ task.id }}">
                             <button type="submit" class="btn btn-sm btn-success">
                                 {{ 'Compléter' if not task.completed else 'Annuler' }}
                             </button>
                         </form>
-                        <form action="/delete/{{ task.id }}" method="POST">
+                        <form class="deleteTaskForm" data-task-id="{{ task.id }}">
                             <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
                         </form>
                     </td>
@@ -81,12 +80,12 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="deletedTasks">
                 {% for task in deleted_tasks %}
-                <tr>
+                <tr id="deleted-task-{{ task.id }}">
                     <td>{{ task.title }}</td>
                     <td>
-                        <form action="/readd/{{ task.id }}" method="POST">
+                        <form class="readdTaskForm" data-task-id="{{ task.id }}">
                             <button type="submit" class="btn btn-sm btn-primary">Ré-ajouter</button>
                         </form>
                     </td>
@@ -95,4 +94,181 @@
             </tbody>
         </table>
     </div>
+    <style>
+        .container {
+            border: none;
+            border-radius: 15px;
+            height: auto;
+            width: auto;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+            opacity: 0; /* Start invisible */
+            animation: fadeIn 1.5s ease-in-out forwards; /* Fade-in animation */
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px); /* Starts slightly below */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); /* Moves to its original position */
+            }
+        }
+    </style>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // AJAX for adding a task
+            $('#addTaskForm').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/add',
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            const task = response.task;
+                            const newRow = `
+                                <tr id="task-${task.id}">
+                                    <td>${task.title}</td>
+                                    <td>${task.due_date}</td>
+                                    <td>
+                                        <span class="badge bg-${task.priority == '3' ? 'danger' : task.priority == '2' ? 'warning' : 'success'}">
+                                            ${task.priority == '3' ? 'Élevée' : task.priority == '2' ? 'Moyenne' : 'Faible'}
+                                        </span>
+                                    </td>
+                                    <td>${task.category}</td>
+                                    <td>${task.completed ? 'Oui' : 'Non'}</td>
+                                    <td class="d-flex gap-2">
+                                        <form class="completeTaskForm" data-task-id="${task.id}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                ${task.completed ? 'Annuler' : 'Compléter'}
+                                            </button>
+                                        </form>
+                                        <form class="deleteTaskForm" data-task-id="${task.id}">
+                                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#activeTasks').append(newRow);
+                            $('#addTaskForm')[0].reset(); // Reset the form
+                        } else {
+                            alert(response.message); // Show error message
+                        }
+                    }
+                });
+            });
+
+            // AJAX for completing a task
+            $(document).on('submit', '.completeTaskForm', function(e) {
+                e.preventDefault();
+                const taskId = $(this).data('task-id');
+                $.ajax({
+                    url: `/complete/${taskId}`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            const task = response.task;
+                            const updatedRow = `
+                                <tr id="task-${task.id}">
+                                    <td>${task.title}</td>
+                                    <td>${task.due_date}</td>
+                                    <td>
+                                        <span class="badge bg-${task.priority == '3' ? 'danger' : task.priority == '2' ? 'warning' : 'success'}">
+                                            ${task.priority == '3' ? 'Élevée' : task.priority == '2' ? 'Moyenne' : 'Faible'}
+                                        </span>
+                                    </td>
+                                    <td>${task.category}</td>
+                                    <td>${task.completed ? 'Oui' : 'Non'}</td>
+                                    <td class="d-flex gap-2">
+                                        <form class="completeTaskForm" data-task-id="${task.id}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                ${task.completed ? 'Annuler' : 'Compléter'}
+                                            </button>
+                                        </form>
+                                        <form class="deleteTaskForm" data-task-id="${task.id}">
+                                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `;
+                            $(`#task-${task.id}`).replaceWith(updatedRow);
+                        }
+                    }
+                });
+            });
+
+            // AJAX for deleting a task
+            $(document).on('submit', '.deleteTaskForm', function(e) {
+                e.preventDefault();
+                const taskId = $(this).data('task-id');
+
+                $.ajax({
+                    url: `/delete/${taskId}`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            // Remove task from active list
+                            $(`#task-${taskId}`).remove();
+
+                            // Append to deleted tasks section
+                            const deletedRow = `
+                                <tr id="deleted-task-${taskId}">
+                                    <td>${response.task.title}</td>
+                                    <td>
+                                        <form class="readdTaskForm" data-task-id="${taskId}">
+                                            <button type="submit" class="btn btn-sm btn-primary">Ré-ajouter</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#deletedTasks').append(deletedRow);
+                        }
+                    }
+                });
+            });
+
+            // AJAX for re-adding a deleted task
+            $(document).on('submit', '.readdTaskForm', function(e) {
+                e.preventDefault();
+                const taskId = $(this).data('task-id');
+                $.ajax({
+                    url: `/readd/${taskId}`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $(`#deleted-task-${taskId}`).remove();
+                            const newRow = `
+                                <tr id="task-${response.task.id}">
+                                    <td>${response.task.title}</td>
+                                    <td>${response.task.due_date}</td>
+                                    <td>
+                                        <span class="badge bg-${response.task.priority == '3' ? 'danger' : response.task.priority == '2' ? 'warning' : 'success'}">
+                                            ${response.task.priority == '3' ? 'Élevée' : response.task.priority == '2' ? 'Moyenne' : 'Faible'}
+                                        </span>
+                                    </td>
+                                    <td>${response.task.category}</td>
+                                    <td>${response.task.completed ? 'Oui' : 'Non'}</td>
+                                    <td class="d-flex gap-2">
+                                        <form class="completeTaskForm" data-task-id="${response.task.id}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                ${response.task.completed ? 'Annuler' : 'Compléter'}
+                                            </button>
+                                        </form>
+                                        <form class="deleteTaskForm" data-task-id="${response.task.id}">
+                                            <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#activeTasks').append(newRow);
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock %}

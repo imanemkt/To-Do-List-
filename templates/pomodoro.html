@@ -5,34 +5,34 @@
 
 {% block content %}
         <div class="container text-center mt-5">
-            <h1 class="mb-4">Pomodoro Timer</h1>
+            <h1 class="mb-4" style="margin-top: 15px; padding-top: 10px;">Pomodoro Timer</h1>
 
             <!-- Form for Customizing Options -->
             <form id="options-form" class="mb-4">
                 <div class="row justify-content-center">
                     <div class="col-md-3">
-                        <label for="work-duration" class="form-label">Work Duration (minutes)</label>
+                        <label for="work-duration" class="form-label">Durée du travail (minutes)</label>
                         <input type="number" id="work-duration" class="form-control" value="25" min="1" required>
                     </div>
                     <div class="col-md-3">
-                        <label for="break-duration" class="form-label">Break Duration (minutes)</label>
+                        <label for="break-duration" class="form-label">Durée de la pause (minutes)</label>
                         <input type="number" id="break-duration" class="form-control" value="5" min="1" required>
                     </div>
                     <div class="col-md-3">
-                        <label for="theme-selector" class="form-label">Theme</label>
+                        <label for="theme-selector" class="form-label">Thème</label>
                         <select id="theme-selector" class="form-select">
-                            <option value="light">Light</option>
-                            <option value="dark">Dark</option>
+                            <option value="light">Clair</option>
+                            <option value="dark">Sombre</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="session-sound" class="form-label">Session Sound</label>
+                        <label for="session-sound" class="form-label">Son de session</label>
                         <select id="session-sound" class="form-select">
-                            <option value="none">None</option>
+                            <option value="none">Rien</option>
                             <option value="quran">Quran</option>
-                            <option value="ticking">Ticking</option>
-                            <option value="ambient">Ambient Noise</option>
-                            <option value="alarm">Alarm</option>
+                            <option value="ticking">Tic-Tac</option>
+                            <option value="ambient">Bruit ambiant</option>
+                            <option value="alarm">Alarme</option>
                         </select>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
                 </div>
                 <div id="ticking-options" class="row justify-content-center mt-3" style="display: none;">
                     <div class="col-md-4">
-                        <label for="ticking-sound-select" class="form-label">Choose Ticking Sound</label>
+                        <label for="ticking-sound-select" class="form-label">Choisissez le son de tic-tac</label>
                         <select id="ticking-sound-select" class="form-select">
                             <option value="{{ url_for('static', filename='audio/ticking-clock-sound.mp3') }}">Ticking 1</option>
                         </select>
@@ -60,13 +60,13 @@
 
             <!-- Timer Controls -->
             <div class="mt-4">
-                <button class="btn btn-primary btn-custom" id="start-btn">Start</button>
+                <button class="btn btn-primary btn-custom" id="start-btn">Démarrer</button>
                 <button class="btn btn-secondary btn-custom" id="pause-btn" disabled>Pause</button>
-                <button class="btn btn-danger btn-custom" id="reset-btn" disabled>Reset</button>
+                <button class="btn btn-danger btn-custom" id="reset-btn" disabled>Réinitialiser</button>
             </div>
 
             <div class="mt-5">
-                <p class="text-muted">Work for the set time, then take a short break!</p>
+                <p class="text-muted" style="margin-top: 15px; padding-bottom: 10px;">Travaillez pendant le temps imparti, puis faites une petite pause !</p>
             </div>
         </div>
 
@@ -82,7 +82,28 @@
         <audio id="ambient-sound" loop></audio>
         <audio id="alarm-sound" loop></audio>
     </main>
-
+    <style>
+        .container {
+            border: none;
+            border-radius: 15px;
+            height: auto;
+            width: auto;
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white background */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow */
+            opacity: 0; /* Start invisible */
+            animation: fadeIn 1.5s ease-in-out forwards; /* Fade-in animation */
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px); /* Starts slightly below */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); /* Moves to its original position */
+            }
+        }
+    </style>
     <script>
         // Same JavaScript logic as before
         let timer;
