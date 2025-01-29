@@ -93,11 +93,30 @@ def logout():
 def get_tasks():
     if 'user_id' in session:
         user_id = session['user_id']
-        cursor.execute("SELECT * FROM tasks WHERE user_id = %s", (user_id,))
+
+        # Fetch active tasks
+        cursor.execute(
+            "SELECT id, title, due_date, priority, category, completed FROM tasks WHERE user_id = %s AND is_deleted = FALSE",
+            (user_id,)
+        )
         tasks_data = cursor.fetchall()
-        tasks = [{'id': task[0], 'title': task[1], 'due_date': task[2], 'priority': task[3], 'category': task[4], 'completed': task[5]} for task in tasks_data]
-        return render_template('tasks.html', tasks=tasks)
+        tasks = [
+            {'id': task[0], 'title': task[1], 'due_date': task[2], 'priority': task[3], 'category': task[4], 'completed': task[5]}
+            for task in tasks_data
+        ]
+
+        # Fetch deleted tasks
+        cursor.execute(
+            "SELECT id, title FROM tasks WHERE user_id = %s AND is_deleted = TRUE",
+            (user_id,)
+        )
+        deleted_tasks_data = cursor.fetchall()
+        deleted_tasks = [{'id': task[0], 'title': task[1]} for task in deleted_tasks_data]
+
+        return render_template('tasks.html', tasks=tasks, deleted_tasks=deleted_tasks)
+
     return redirect(url_for('login'))
+
 
 @app.route('/add', methods=['POST'])
 def add_task():
@@ -114,30 +133,78 @@ def add_task():
                 (title, due_date, priority, category, False, user_id)
             )
             db.commit()
-            flash('Task added successfully!', 'success')
+            # Fetch the newly added task
+            cursor.execute("SELECT * FROM tasks WHERE id = LAST_INSERT_ID()")
+            new_task = cursor.fetchone()
+            task = {
+                'id': new_task[0],
+                'title': new_task[1],
+                'due_date': new_task[2],
+                'priority': new_task[3],
+                'category': new_task[4],
+                'completed': new_task[5]
+            }
+            return jsonify({'status': 'success', 'task': task})
         else:
-            flash('Please fill in all the fields', 'danger')
-
-    return redirect(url_for('home'))
+            return jsonify({'status': 'error', 'message': 'Please fill in all the fields'})
+    return jsonify({'status': 'error', 'message': 'Unauthorized'})
 
 @app.route('/complete/<int:task_id>', methods=['POST'])
 def complete_task(task_id):
     if 'user_id' in session:
         cursor.execute("UPDATE tasks SET completed = NOT completed WHERE id = %s", (task_id,))
         db.commit()
-        flash('Task status updated', 'success')
-    return redirect(url_for('home'))
+        # Fetch the updated task
+        cursor.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
+        updated_task = cursor.fetchone()
+        task = {
+            'id': updated_task[0],
+            'title': updated_task[1],
+            'due_date': updated_task[2],
+            'priority': updated_task[3],
+            'category': updated_task[4],
+            'completed': updated_task[5]
+        }
+        return jsonify({'status': 'success', 'task': task})
+    return jsonify({'status': 'error', 'message': 'Unauthorized'})
 
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
     if 'user_id' in session:
-        cursor.execute("SELECT * FROM tasks WHERE id = %s", (task_id,))
-        task_to_delete = cursor.fetchone()
-        if task_to_delete:
-            cursor.execute("DELETE FROM tasks WHERE id = %s", (task_id,))
+        # Get the task's title before deleting
+        cursor.execute("SELECT title FROM tasks WHERE id = %s", (task_id,))
+        task = cursor.fetchone()
+        
+        if task:
+            cursor.execute("UPDATE tasks SET is_deleted = TRUE WHERE id = %s", (task_id,))
             db.commit()
-            flash('Task deleted successfully', 'success')
-    return redirect(url_for('home'))
+            
+            return jsonify({'status': 'success', 'task_id': task_id, 'task': {'title': task[0]}})
+    
+    return jsonify({'status': 'error', 'message': 'Unauthorized'})
+
+@app.route('/readd/<int:task_id>', methods=['POST'])
+def readd_task(task_id):
+    if 'user_id' in session:
+        cursor.execute("UPDATE tasks SET is_deleted = FALSE WHERE id = %s", (task_id,))
+        db.commit()
+
+        # Fetch the restored task details
+        cursor.execute("SELECT id, title, due_date, priority, category, completed FROM tasks WHERE id = %s", (task_id,))
+        task = cursor.fetchone()
+        if task:
+            return jsonify({
+                'status': 'success',
+                'task': {
+                    'id': task[0],
+                    'title': task[1],
+                    'due_date': task[2],
+                    'priority': task[3],
+                    'category': task[4],
+                    'completed': task[5]
+                }
+            })
+    return jsonify({'status': 'error', 'message': 'Unauthorized'})
 
 @app.route('/activity')
 def activity():
@@ -145,11 +212,16 @@ def activity():
         user_id = session['user_id']
         cursor.execute("SELECT * FROM tasks WHERE user_id = %s", (user_id,))
         tasks_data = cursor.fetchall()
+        
         tasks = [{'id': task[0], 'title': task[1], 'due_date': task[2], 'priority': task[3], 'category': task[4], 'completed': task[5]} for task in tasks_data]
+        
         completed_tasks = len([task for task in tasks if task['completed']])
         total_tasks = len(tasks)
+        
+        # Pass 'tasks' to the template
         return render_template(
             'activity.html', 
+            tasks=tasks,  # Pass tasks here
             completed_tasks=completed_tasks, 
             total_tasks=total_tasks
         )

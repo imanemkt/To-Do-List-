@@ -3,9 +3,105 @@
 {% block title %}Pomodoro Timer{% endblock %}
 
 {% block content %}
-        <div class="header">
-            <h1>Welcome, {{ username }}!</h1>
-            <p>Gérez vos tâches, suivez vos activités et améliorez votre productivité.</p>
-            <a href="/tasks" class="btn-custom">Commencez maintenant</a>
-        </div>
-        {% endblock %}
+<div class="header">
+    <h1>Bienvenue, {{ username }}!</h1>
+    <p>Gérez vos tâches, suivez vos activités et améliorez votre productivité.</p>
+    <a href="/tasks" class="btn-custom">Commencez maintenant!</a>
+</div>
+<style>
+    /* General Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(-45deg, #78A78A, #d0dfd4, #8FC0A9, #4a7a5d);
+    background-size: 400% 400%;
+    animation: gradientBG 10s ease infinite;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    color: #333;
+}
+
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Header Styles */
+.header {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #4a7a5d;
+}
+
+.header p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #555;
+}
+
+/* Button Styles */
+.btn-custom {
+    background-color: #8FC0A9;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    width: 40%;
+}
+
+.btn-custom:hover {
+    background-color: #78A78A;
+    transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+<script>
+    // Add a click event to the button for additional interactivity
+    document.querySelector('.btn-custom').addEventListener('click', function () {
+        alert('Redirection vers la page des tâches...');
+        // You can add more functionality here, like redirecting programmatically
+    });
+
+    // Optional: Add a hover effect using JavaScript
+    const button = document.querySelector('.btn-custom');
+    button.addEventListener('mouseenter', () => {
+        button.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+    });
+    button.addEventListener('mouseleave', () => {
+        button.style.boxShadow = 'none';
+    });
+</script>
+{% endblock %}
