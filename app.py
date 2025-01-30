@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 # MySQL configuration
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = 'host.docker.internal'
 app.config['MYSQL_USER'] = 'Fatna'  # your MySQL username
 app.config['MYSQL_PASSWORD'] = 'Parkminju123'  # your MySQL password
 app.config['MYSQL_DB'] = 'to_do_list'  # your MySQL database name
