@@ -10,6 +10,10 @@ app.config['MYSQL_USER'] = 'Fatna'  # your MySQL username
 app.config['MYSQL_PASSWORD'] = 'Parkminju123'  # your MySQL password
 app.config['MYSQL_DB'] = 'to_do_list'  # your MySQL database name
 
+SQLALCHEMY_DATABASE_URI = "mysql+pymysql://Fatna:Parkminju123@host.docker.internal/to_do_list"
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+
 # Initialize MySQL connection
 db = mysql.connector.connect(
     host=app.config['MYSQL_HOST'],
