@@ -4,22 +4,19 @@ import os
 
 app = Flask(__name__)
 
-# MySQL configuration
-app.config['MYSQL_HOST'] = 'host.docker.internal'
-app.config['MYSQL_USER'] = 'Fatna'  # your MySQL username
-app.config['MYSQL_PASSWORD'] = 'Parkminju123'  # your MySQL password
-app.config['MYSQL_DB'] = 'to_do_list'  # your MySQL database name
+app.config['MYSQL_USER'] = os.getenv('root')
+app.config['MYSQL_PASSWORD'] = os.getenv('gT@=MAmkB{PtX#7B')
+app.config['MYSQL_DB'] = os.getenv('flask-mysql-instance')
+app.config['MYSQL_HOST'] = os.getenv('35.205.255.83')
 
-SQLALCHEMY_DATABASE_URI = "mysql+pymysql://Fatna:Parkminju123@host.docker.internal/to_do_list"
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@/{app.config['MYSQL_DB']}?unix_socket=/cloudsql/{os.getenv('to-do-list-flask-449601:europe-west1:flask-mysql-instance')}"
 
 # Initialize MySQL connection
 db = mysql.connector.connect(
-    host=app.config['MYSQL_HOST'],
     user=app.config['MYSQL_USER'],
     password=app.config['MYSQL_PASSWORD'],
-    database=app.config['MYSQL_DB']
+    database=app.config['MYSQL_DB'],
+    host=app.config['MYSQL_HOST']
 )
 cursor = db.cursor()
 
