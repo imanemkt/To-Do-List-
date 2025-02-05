@@ -1,23 +1,39 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import pymysql
 import mysql.connector
 import os
 
 app = Flask(__name__)
 
-app.config['MYSQL_USER'] = os.getenv('root')
-app.config['MYSQL_PASSWORD'] = os.getenv('gT@=MAmkB{PtX#7B')
-app.config['MYSQL_DB'] = os.getenv('flask-mysql-instance')
-app.config['MYSQL_HOST'] = os.getenv('35.205.255.83')
+# Configure database connection
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
+app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')  # If using public IP
+app.config['INSTANCE_CONNECTION_NAME'] = os.getenv('INSTANCE_CONNECTION_NAME')  # Cloud SQL instance name
 
-SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@/{app.config['MYSQL_DB']}?unix_socket=/cloudsql/{os.getenv('to-do-list-flask-449601:europe-west1:flask-mysql-instance')}"
+# Correct SQLAlchemy Database URI for Google Cloud SQL
+SQLALCHEMY_DATABASE_URI = (
+    f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@"
+    f"{app.config['MYSQL_HOST']}/{app.config['MYSQL_DB']}?charset=utf8mb4"
+)
+
+# If using Unix socket (Cloud SQL Proxy or Cloud Run)
+if app.config['INSTANCE_CONNECTION_NAME']:
+    SQLALCHEMY_DATABASE_URI = (
+        f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@"
+        f"localhost/{app.config['MYSQL_DB']}?unix_socket=/cloudsql/{app.config['INSTANCE_CONNECTION_NAME']}"
+    )
 
 # Initialize MySQL connection
 db = mysql.connector.connect(
     user=app.config['MYSQL_USER'],
     password=app.config['MYSQL_PASSWORD'],
     database=app.config['MYSQL_DB'],
-    host=app.config['MYSQL_HOST']
+    host=app.config['MYSQL_HOST'] if not app.config['INSTANCE_CONNECTION_NAME'] else None,
+    unix_socket=f"/cloudsql/{app.config['INSTANCE_CONNECTION_NAME']}" if app.config['INSTANCE_CONNECTION_NAME'] else None
 )
+
 cursor = db.cursor()
 
 # Ensure templates directory exists
