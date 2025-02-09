@@ -22,15 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose port 8080 (Google Cloud Run requirement)
-ENV PORT=8080
 EXPOSE 8080
 
-# Set environment variables for Cloud SQL
-ENV MYSQL_USER="root"
-ENV MYSQL_PASSWORD="gT@=MAmkB{PtX#7B"
-ENV MYSQL_db="flask-mysql-instance"
-ENV MYSQL_HOST="35.205.255.83"
-ENV INSTANCE_CONNECTION_NAME="to-do-list-flask-449601:europe-west1:flask-mysql-instance"
-
 # Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+CMD ["python", "app.py"]

@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 .env
+.git
+*.pyo
 venv/
 instance/
 #Prevent unnecessary files from being copied to the container

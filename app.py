@@ -2,46 +2,51 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import pymysql
 import mysql.connector
 import os
+from google.cloud import secretmanager
+from flask_sqlalchemy import SQLAlchemy
+from models import db, User, Task
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 app = Flask(__name__)
 
-# Configure database connection
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')  # If using public IP
-app.config['INSTANCE_CONNECTION_NAME'] = os.getenv('INSTANCE_CONNECTION_NAME')  # Cloud SQL instance name
+# Function to fetch secrets from Google Secret Manager
+def get_secret(secret_name):
+    client = secretmanager.SecretManagerServiceClient()
+    project_id = "to-do-list-flask-449601"
+    name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+    response = client.access_secret_version(name=name)
+    return response.payload.data.decode("UTF-8")
 
-# Correct SQLAlchemy Database URI for Google Cloud SQL
-SQLALCHEMY_DATABASE_URI = (
-    f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@"
-    f"{app.config['MYSQL_HOST']}/{app.config['MYSQL_DB']}?charset=utf8mb4"
-)
+# Load secrets securely
+app.config['MYSQL_USER'] = get_secret('MYSQL_USER')
+app.config['MYSQL_PASSWORD'] = get_secret('MYSQL_PASSWORD')
+app.config['MYSQL_DB'] = get_secret('MYSQL_DB')
+app.config['INSTANCE_CONNECTION_NAME'] = os.getenv('INSTANCE_CONNECTION_NAME')
 
-# If using Unix socket (Cloud SQL Proxy or Cloud Run)
+# Construct Database URI for SQLAlchemy
 if app.config['INSTANCE_CONNECTION_NAME']:
-    SQLALCHEMY_DATABASE_URI = (
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
         f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@"
-        f"localhost/{app.config['MYSQL_DB']}?unix_socket=/cloudsql/{app.config['INSTANCE_CONNECTION_NAME']}"
+        f"/{app.config['MYSQL_DB']}?unix_socket=/cloudsql/{app.config['INSTANCE_CONNECTION_NAME']}"
+    )
+else:
+    app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
+    app.config['SQLALCHEMY_DATABASE_URI'] = (
+        f"mysql+pymysql://{app.config['MYSQL_USER']}:{app.config['MYSQL_PASSWORD']}@"
+        f"{app.config['MYSQL_HOST']}/{app.config['MYSQL_DB']}?charset=utf8mb4"
     )
 
-# Initialize MySQL connection
-db = mysql.connector.connect(
-    user=app.config['MYSQL_USER'],
-    password=app.config['MYSQL_PASSWORD'],
-    database=app.config['MYSQL_DB'],
-    host=app.config['MYSQL_HOST'] if not app.config['INSTANCE_CONNECTION_NAME'] else None,
-    unix_socket=f"/cloudsql/{app.config['INSTANCE_CONNECTION_NAME']}" if app.config['INSTANCE_CONNECTION_NAME'] else None
-)
+# Initialize SQLAlchemy
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'your_default_secret_key')  # Secure Flask sessions
 
-cursor = db.cursor()
+db = SQLAlchemy(app)
 
 # Ensure templates directory exists
 app.template_folder = os.path.join(os.path.dirname(__file__), 'templates')
-os.makedirs(app.template_folder, exist_ok=True)
 
-# Configure session
-app.secret_key = 'your_secret_key'  # Change this to a secure key
+cursor = db.cursor()
 
 @app.route('/')
 def home():
@@ -67,19 +72,17 @@ def signup():
         password = request.form.get('password')
 
         if username and email and password:
-            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-            user_exists = cursor.fetchone()
-            if user_exists:
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
                 flash('Email already in use. Please choose another one.', 'danger')
             else:
-                cursor.execute(
-                    "INSERT INTO users (username, email, password) VALUES (%s, %s, %s)",
-                    (username, email, password)
-                )
-                db.commit()
+                new_user = User(username=username, email=email)
+                new_user.set_password(password)  # Hash password
+                db.session.add(new_user)
+                db.session.commit()
                 flash('Registration successful. Please login.', 'success')
                 return redirect(url_for('login'))
-    
+
     return render_template('signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -88,11 +91,10 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
-        cursor.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
-        user = cursor.fetchone()
-        
-        if user:
-            session['user_id'] = user[0]  # Store the user's ID in the session
+        user = User.query.filter_by(email=email).first()
+
+        if user and user.check_password(password):  # Secure password check
+            session['user_id'] = user.id
             flash('Login successful!', 'success')
             return redirect(url_for('home'))
         else:
@@ -110,60 +112,34 @@ def logout():
 def get_tasks():
     if 'user_id' in session:
         user_id = session['user_id']
-
-        # Fetch active tasks
-        cursor.execute(
-            "SELECT id, title, due_date, priority, category, completed FROM tasks WHERE user_id = %s AND is_deleted = FALSE",
-            (user_id,)
-        )
-        tasks_data = cursor.fetchall()
-        tasks = [
-            {'id': task[0], 'title': task[1], 'due_date': task[2], 'priority': task[3], 'category': task[4], 'completed': task[5]}
-            for task in tasks_data
-        ]
-
-        # Fetch deleted tasks
-        cursor.execute(
-            "SELECT id, title FROM tasks WHERE user_id = %s AND is_deleted = TRUE",
-            (user_id,)
-        )
-        deleted_tasks_data = cursor.fetchall()
-        deleted_tasks = [{'id': task[0], 'title': task[1]} for task in deleted_tasks_data]
+        tasks = Task.query.filter_by(user_id=user_id, is_deleted=False).all()
+        deleted_tasks = Task.query.filter_by(user_id=user_id, is_deleted=True).all()
 
         return render_template('tasks.html', tasks=tasks, deleted_tasks=deleted_tasks)
-
     return redirect(url_for('login'))
 
 
 @app.route('/add', methods=['POST'])
 def add_task():
     if 'user_id' in session:
-        user_id = session['user_id']
         title = request.form.get('title')
         due_date = request.form.get('due_date')
         priority = request.form.get('priority')
         category = request.form.get('category')
 
         if title and due_date:
-            cursor.execute(
-                "INSERT INTO tasks (title, due_date, priority, category, completed, user_id) VALUES (%s, %s, %s, %s, %s, %s)",
-                (title, due_date, priority, category, False, user_id)
+            new_task = Task(
+                title=title,
+                due_date=due_date,
+                priority=priority,
+                category=category,
+                completed=False,
+                user_id=session['user_id']
             )
-            db.commit()
-            # Fetch the newly added task
-            cursor.execute("SELECT * FROM tasks WHERE id = LAST_INSERT_ID()")
-            new_task = cursor.fetchone()
-            task = {
-                'id': new_task[0],
-                'title': new_task[1],
-                'due_date': new_task[2],
-                'priority': new_task[3],
-                'category': new_task[4],
-                'completed': new_task[5]
-            }
-            return jsonify({'status': 'success', 'task': task})
-        else:
-            return jsonify({'status': 'error', 'message': 'Please fill in all the fields'})
+            db.session.add(new_task)
+            db.session.commit()
+
+            return jsonify({'status': 'success', 'task': {'id': new_task.id, 'title': new_task.title}})
     return jsonify({'status': 'error', 'message': 'Unauthorized'})
 
 @app.route('/complete/<int:task_id>', methods=['POST'])
@@ -188,16 +164,11 @@ def complete_task(task_id):
 @app.route('/delete/<int:task_id>', methods=['POST'])
 def delete_task(task_id):
     if 'user_id' in session:
-        # Get the task's title before deleting
-        cursor.execute("SELECT title FROM tasks WHERE id = %s", (task_id,))
-        task = cursor.fetchone()
-        
+        task = Task.query.filter_by(id=task_id, user_id=session['user_id']).first()
         if task:
-            cursor.execute("UPDATE tasks SET is_deleted = TRUE WHERE id = %s", (task_id,))
-            db.commit()
-            
-            return jsonify({'status': 'success', 'task_id': task_id, 'task': {'title': task[0]}})
-    
+            task.is_deleted = True
+            db.session.commit()
+            return jsonify({'status': 'success', 'task_id': task_id})
     return jsonify({'status': 'error', 'message': 'Unauthorized'})
 
 @app.route('/readd/<int:task_id>', methods=['POST'])
