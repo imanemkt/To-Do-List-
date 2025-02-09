@@ -5,7 +5,7 @@ steps:
     entrypoint: 'pip'
     args: ['install', '-r', 'requirements.txt']
 
-  # Step 2: Build and push Docker image to Google Container Registry (GCR)
+  # Step 2: Build and push Docker image to Google Cloud Container Registry (GCR)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Docker image'
     args: ['build', '-t', 'gcr.io/$PROJECT_ID/flask-app', '.']
